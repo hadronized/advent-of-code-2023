@@ -27,7 +27,7 @@ fn reduce(mut input: &str) -> u32 {
     for (i, d) in d.iter().enumerate() {
       if input.starts_with(*d) {
         digits.push(i as u32 + 1);
-        input = &input[d.len()..];
+        input = &input[1..];
         continue 'a;
       }
     }
