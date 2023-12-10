@@ -43,7 +43,8 @@ impl CatMap {
   /// Case 6:
   /// -------x···a··y···b---
   fn resolve_range(&self, range: (u64, u64)) -> (Option<(u64, u64)>, [Option<(u64, u64)>; 2]) {
-    let src_end = self.src + self.range;
+    let src_end = self.src + self.range - 1;
+    let dest_end = self.dest + self.range - 1;
 
     if range.1 < self.src || range.0 > src_end {
       // case 1 & 2
@@ -58,7 +59,7 @@ impl CatMap {
       } else {
         // case 4
         (
-          Some((self.dest, self.dest + self.range)),
+          Some((self.dest, dest_end)),
           [Some((range.0, self.src - 1)), Some((src_end + 1, range.1))],
         )
       }
@@ -74,7 +75,7 @@ impl CatMap {
     } else {
       // case 6
       (
-        Some((self.dest + range.0 - self.src, self.dest + self.range)),
+        Some((self.dest + range.0 - self.src, dest_end)),
         [Some((src_end + 1, range.1)), None],
       )
     }
