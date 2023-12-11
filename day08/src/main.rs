@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use num::Integer;
+
 const EXAMPLE: &str = include_str!("example.txt");
 const INPUT: &str = include_str!("input.txt");
 
@@ -51,16 +53,17 @@ fn parse(input: &str) -> (Dirs, Nodes) {
 
 fn solve(dirs: &Dirs, nodes: &Nodes, starts: Vec<String>) -> usize {
   let mut dirs = dirs.dirs.iter().cycle();
+  let mut steps = vec![0; starts.len()];
   let mut current_nodes = starts;
-  let mut step = 0;
 
-  while !current_nodes
-    .iter()
-    .all(|current_node| current_node.ends_with('Z'))
-  {
+  loop {
     let dir = dirs.next().unwrap();
 
-    current_nodes.iter_mut().for_each(|current_node| {
+    for (i, current_node) in current_nodes.iter_mut().enumerate() {
+      if current_node.ends_with('Z') {
+        continue;
+      }
+
       let (left, right) = nodes.nodes.get(current_node.as_str()).unwrap();
 
       match dir {
@@ -68,12 +71,16 @@ fn solve(dirs: &Dirs, nodes: &Nodes, starts: Vec<String>) -> usize {
         'R' => *current_node = right.clone(),
         _ => (),
       }
-    });
 
-    step += 1;
+      steps[i] += 1;
+    }
+
+    if current_nodes.iter().all(|node| node.ends_with('Z')) {
+      break;
+    }
   }
 
-  step
+  steps.iter().fold(1, |acc, step| step.lcm(&acc))
 }
 
 fn main() {
