@@ -7,6 +7,7 @@ const INPUT: &str = include_str!("input.txt");
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 enum Card {
+  NJ,
   N2,
   N3,
   N4,
@@ -23,6 +24,25 @@ enum Card {
 }
 
 impl Card {
+  fn all() -> &'static [Self] {
+    &[
+      Self::NJ,
+      Self::N2,
+      Self::N3,
+      Self::N4,
+      Self::N5,
+      Self::N6,
+      Self::N7,
+      Self::N8,
+      Self::N9,
+      Self::T,
+      Self::J,
+      Self::Q,
+      Self::K,
+      Self::A,
+    ]
+  }
+
   fn parse(c: char) -> Self {
     match c {
       '2' => Self::N2,
@@ -61,7 +81,42 @@ struct Hand {
 }
 
 impl Hand {
-  fn ty(&self) -> Type {
+  fn best_j(&self) -> Type {
+    Card::all()
+      .into_iter()
+      .map(|new_card| {
+        let cards = self
+          .cards
+          .iter()
+          .map(|card| if let Card::J = card { *new_card } else { *card })
+          .collect();
+        Hand {
+          cards,
+          bid: self.bid,
+        }
+        .ty(false)
+      })
+      .max()
+      .unwrap()
+  }
+
+  fn replace_j(&self) -> Self {
+    let cards = self
+      .cards
+      .iter()
+      .map(|card| if let Card::J = card { Card::NJ } else { *card })
+      .collect();
+    Self {
+      cards,
+      bid: self.bid,
+    }
+  }
+
+  fn ty(&self, j: bool) -> Type {
+    if j {
+      return self.best_j();
+    }
+
     let mut cards = self.cards.clone();
     cards.sort();
 
@@ -104,9 +159,18 @@ fn parse(input: &str) -> Vec<Hand> {
     .collect()
 }
 
-fn part1(hands: &[Hand]) -> usize {
+fn solve(hands: &[Hand], j: bool) -> usize {
   let mut hands = hands.to_owned();
-  hands.sort_by_key(|hand| (hand.ty(), hand.cards.clone()));
+  hands.sort_by_key(|hand| {
+    (
+      hand.ty(j),
+      if j {
+        hand.replace_j().cards
+      } else {
+        hand.cards.clone()
+      },
+    )
+  });
   hands
     .iter()
     .enumerate()
@@ -118,6 +182,8 @@ fn main() {
   let example_hands = parse(EXAMPLE);
   let input_hands = parse(INPUT);
 
-  println!("example part 1: {}", part1(&example_hands));
-  println!("input part 1: {}", part1(&input_hands));
+  println!("example part 1: {}", solve(&example_hands, false));
+  println!("input part 1: {}", solve(&input_hands, false));
+  println!("example part 2: {}", solve(&example_hands, true));
+  println!("input part 2: {}", solve(&input_hands, true));
 }
