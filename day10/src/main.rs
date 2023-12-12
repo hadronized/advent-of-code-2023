@@ -71,101 +71,30 @@ fn find_loop(grid: &Grid) -> HashSet<Pos> {
   visited
 }
 
-enum ScanLine {
-  Out,
-  WallIn,
-  WallOut,
-  In,
-}
-
 fn enclosed_area(grid: &Grid, pipe_loop: &HashSet<Pos>) -> usize {
-  let mut horiz = HashSet::new();
-  let mut vert = HashSet::new();
+  let mut area = 0;
 
   for (i, line) in grid.iter().enumerate() {
-    let mut scan_line = ScanLine::Out;
+    let mut oddity = 0;
 
     for (j, c) in line.iter().enumerate() {
-      scan(pipe_loop, (i, j), *c, &mut scan_line, &mut horiz, false);
-    }
-  }
+      let pos = (i, j);
+      let in_pipe_loop = pipe_loop.contains(&pos);
+      println!(
+        "{pos:?} {c} (in pipe: {in_pipe_loop}; oddity: {oddity})",
+        c = *c as char
+      );
 
-  for j in 0..grid[0].len() {
-    let mut scan_line = ScanLine::Out;
-
-    for i in 0..grid.len() {
-      let c = grid[i][j];
-      scan(pipe_loop, (i, j), c, &mut scan_line, &mut vert, true);
-    }
-  }
-
-  println!("{horiz:?}");
-  println!("{vert:?}");
-  horiz.intersection(&vert).count()
-}
-
-fn scan(
-  pipe_loop: &HashSet<Pos>,
-  pos: Pos,
-  c: u8,
-  scan_line: &mut ScanLine,
-  area: &mut HashSet<Pos>,
-  vert: bool,
-) {
-  let in_pipe_loop = pipe_loop.contains(&pos);
-  println!("{pos:?} {c} (in pipe: {in_pipe_loop})", c = c as char);
-
-  match scan_line {
-    ScanLine::Out => {
-      if in_pipe_loop
-        && (!vert && [b'S', b'|', b'F', b'L'].contains(&c)
-          || vert && [b'S', b'-', b'F', b'7'].contains(&c))
-      {
-        println!("  out -> wallin");
-        *scan_line = ScanLine::WallIn;
-      }
-    }
-
-    ScanLine::WallIn => {
-      if c == b'.' {
-        println!("  wallin -> in XXX");
-        *scan_line = ScanLine::In;
-        area.insert(pos);
-      } else if in_pipe_loop
-        && (!vert && [b'7', b'J'].contains(&c) || vert && [b'J', b'L'].contains(&c))
-      {
-        println!("  wallin -> out");
-        *scan_line = ScanLine::Out;
-      } else if in_pipe_loop
-        && (!vert && [b'|', b'L', b'F'].contains(&c) || vert && [b'-', b'7', b'F'].contains(&c))
-      {
-        println!("  wallin -> wallout");
-        *scan_line = ScanLine::WallOut;
-      }
-    }
-
-    ScanLine::WallOut => {
-      if c == b'.' {
-        println!("  wallout -> out");
-        *scan_line = ScanLine::Out;
-      } else if in_pipe_loop
-        && [if vert { b'-' } else { b'|' }, b'7', b'J', b'L', b'F'].contains(&c)
-      {
-        println!("  wallout -> wallin");
-        *scan_line = ScanLine::WallIn;
-      }
-    }
-
-    ScanLine::In => {
-      if c == b'.' {
-        println!("  XXX");
-        area.insert(pos);
-      } else {
-        println!("  in -> wallout");
-        *scan_line = ScanLine::WallOut;
+      if in_pipe_loop && [b'S', b'J', b'7', b'F', b'L', b'|'].contains(c) {
+        oddity = 1 - oddity;
+      } else if *c == b'.' && (oddity % 2 == 1) {
+        println!("  incrementing");
+        area += 1;
       }
     }
   }
+
+  area
 }
 
 fn main() {
